@@ -1,0 +1,13 @@
+{
+    "name": "wildwestriverrider/weather",
+    "description": "Prestashop Weather Module",
+    "require": {
+        "vlucas/phpdotenv": "^2.4"
+    },
+    "authors": [
+        {
+            "name": "James Sweeney",
+            "email": "wildwestriverrider@gmail.com"
+        }
+    ]
+}
