@@ -8,6 +8,9 @@ require __DIR__.'/vendor/autoload.php';
 
 class Weather extends Module
 {
+	/**
+	 * Weather constructor.
+	 */
 	public function __construct()
 	{
 		$this->name = 'weather';
@@ -21,8 +24,17 @@ class Weather extends Module
 		$this->displayName = $this->l('Weather');
 		$this->description = $this->l('Display weather for a given zip code.');
 		$this->ps_versions_compliancy = array('min' => '1.7', 'max' => _PS_VERSION_);
+
+		// Load up the .env file that is holding the api key
+		$dotenv = new Dotenv\Dotenv(__DIR__);
+		$dotenv->load();
 	}
 
+	/**
+	 * Prestashop specific function for creating the admin config page
+	 *
+	 * @return string
+	 */
 	public function getContent()
 	{
 		$output = null;
@@ -41,6 +53,11 @@ class Weather extends Module
 		return $output.$this->displayForm();
 	}
 
+	/**
+	 * Create the form for collecting a zip code from the user
+	 *
+	 * @return string
+	 */
 	public function displayForm()
 	{
 		// Get default language
@@ -92,20 +109,17 @@ class Weather extends Module
 		return $helper->generateForm($fields_form);
 	}
 
+	/**
+	 * Hook into the left column of Prestashop
+	 * @param $params
+	 *
+	 * @return mixed
+	 */
 	public function hookDisplayLeftColumn($params)
 	{
-		$dotenv = new Dotenv\Dotenv(__DIR__);
-		$dotenv->load();
-		$open_weather_key = getenv('OPEN_WEATHER_KEY');
-		$sql = 'SELECT zip_code FROM '._DB_PREFIX_.'weather ORDER BY id_weather LIMIT 1';
-		$zip_code = Db::getInstance()->executeS($sql);
-		$zip_code = $zip_code[0]['zip_code'];
-		$data = file_get_contents("http://api.openweathermap.org/data/2.5/weather?zip={$zip_code},us&appid={$open_weather_key}&units=imperial");
-		$data = json_decode($data);
+		$data = $this->getWeatherData();
 		$this->context->smarty->assign(
 			array(
-				'zip_code' => $zip_code,
-				'my_module_link' => $this->context->link->getModuleLink('weather', 'display'),
 				'data' => $data,
 				'temp' => round($data->main->temp, 1),
 				'temp_min' => round($data->main->temp_min, 1),
@@ -115,11 +129,34 @@ class Weather extends Module
 		return $this->display(__FILE__, 'views/hook/weather.tpl');
 	}
 
+	/**
+	 * Get data from the open weather map api
+	 * @return mixed|string
+	 */
+	private function getWeatherData(  ) {
+		$open_weather_key = getenv('OPEN_WEATHER_KEY');
+		$sql = 'SELECT zip_code FROM '._DB_PREFIX_.'weather ORDER BY id_weather LIMIT 1';
+		$zip_code = Db::getInstance()->executeS($sql);
+		$zip_code = $zip_code[0]['zip_code'];
+		$data = file_get_contents("http://api.openweathermap.org/data/2.5/weather?zip={$zip_code},us&appid={$open_weather_key}&units=imperial");
+		$data = json_decode($data);
+		$data->zip_code = $zip_code;
+		return $data;
+	}
+
+	/**
+	 *  Add a stylesheet to the Prestashop header area
+	 */
 	public function hookDisplayHeader()
 	{
 		$this->context->controller->addCSS($this->_path.'css/weather.css', 'all');
 	}
 
+	/**
+	 * Prestashop module install function
+	 *
+	 * @return bool
+	 */
 	public function install()
 	{
 		if (
@@ -133,6 +170,11 @@ class Weather extends Module
 		return true;
 	}
 
+	/**
+	 * Add a table to the db for holding the zip code
+	 *
+	 * @return bool
+	 */
 	public function installDb()
 	{
 		$query = 'CREATE TABLE IF NOT EXISTS '._DB_PREFIX_.'weather (
@@ -143,6 +185,11 @@ class Weather extends Module
 		return (Db::getInstance()->execute($query));
 	}
 
+	/**
+	 * Prestashop uninstall function
+	 *
+	 * @return bool
+	 */
 	public function uninstall()
 	{
 		if (!parent::uninstall() || !$this->uninstallDb())
@@ -151,12 +198,23 @@ class Weather extends Module
 		return true;
 	}
 
+	/**
+	 * Drop the table for holding the zip code
+	 *
+	 * @return bool
+	 */
 	protected function uninstallDb()
 	{
 		Db::getInstance()->execute('DROP TABLE '._DB_PREFIX_.'weather');
 		return true;
 	}
 
+	/**
+	 * Update or Insert a zip code into the weather table
+	 * depending on if one already exists
+	 *
+	 * @param $zip_code
+	 */
 	protected function updateZipCode($zip_code)
 	{
 		// Check if a zip_code already exists in the db since we are only working with one

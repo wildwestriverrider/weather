@@ -1,7 +1,7 @@
 <!-- Block weather -->
-{if isset($zip_code) && $zip_code}
+{if isset($data->zip_code) && $data->zip_code}
     <div id="weather_block_home" class="block local-weather">
-        <h4>Current Weather for {if isset($data->name)}{$data->name},{/if} {$zip_code}</h4>
+        <h4>Current Weather for {if isset($data->name)}{$data->name},{/if} {$data->zip_code}</h4>
         <div class="block_content">
             <img class="weather-icon" src="http://openweathermap.org/img/w/{$data->weather[0]->icon}.png" />
             <div class="weather-summary">
