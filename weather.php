@@ -74,7 +74,8 @@ class Weather extends Module
 					'label' => $this->l('Zip Code'),
 					'name' => 'zip_code',
 					'size' => 10,
-					'required' => true
+					'required' => true,
+					'desc' => 'Please enter a zip code to get weather data for that location.'
 				)
 			),
 			'submit' => array(
