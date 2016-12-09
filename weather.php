@@ -42,7 +42,10 @@ class Weather extends Module
 		if (Tools::isSubmit('submit'.$this->name))
 		{
 			$zip_code = strval(Tools::getValue('zip_code'));
-			if (!$zip_code || empty($zip_code))
+
+			// todo check zip code valid here
+
+			if (!$this->checkZipCode($zip_code))
 				$output .= $this->displayError($this->l('Invalid Zip Code value'));
 			else
 			{
@@ -51,6 +54,19 @@ class Weather extends Module
 			}
 		}
 		return $output.$this->displayForm();
+	}
+
+	public function checkZipCode($zip)
+	{
+		if(!empty($zip))
+			$response = json_decode(file_get_contents('http://api.zippopotam.us/us/'.$zip));
+		else
+			return false;
+
+		if(empty($response))
+			return false;
+		else
+			return true;
 	}
 
 	/**
